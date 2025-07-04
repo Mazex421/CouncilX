@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CouncilX - AI Council</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #101320, #1e233a);
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+      color: #00f7ff;
+      padding: 20px 0;
+    }
+    #login-box, #question-box, #answer-box, #api-access, #library-box {
+      padding: 20px;
+      background: #21273d;
+      margin: 10px auto;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 0 12px rgba(0, 247, 255, 0.2);
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    input[type="text"], input[type="password"] {
+      width: 40%;
+      margin-right: 10px;
+    }
+    button {
+      background: #00f7ff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .council-response {
+      margin-top: 15px;
+      background: #2a2e45;
+      padding: 15px;
+      border-left: 4px solid #00f7ff;
+      border-radius: 5px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .role {
+      font-weight: bold;
+      color: #00f7ff;
+      margin-bottom: 5px;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    #memory {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 10px;
+    }
+    #library-box ul {
+      list-style: none;
+      padding-left: 0;
+      font-size: 14px;
+    }
+    #library-box li {
+      background: #2a2e45;
+      margin: 5px 0;
+      padding: 10px;
+      border-left: 3px solid #00f7ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 CouncilX Council of Intelligence</h1>
+
+  <div id="login-box">
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <label><input type="checkbox" id="rememberMe"> Remember me</label>
+    <button onclick="login()">Login</button>
+    <button onclick="guestMode()">Guest Mode</button>
+  </div>
+
+  <div id="api-access" style="display:none;">
+    <p><strong>🔑 You entere The council</strong> <code id=""></code></p>
+  </div>
+
+  <div id="question-box" style="display:none;">
+    <input type="text" id="userQuestion" placeholder="Ask the council anything...">
+    <button onclick="getCouncilAnswers()">Ask</button>
+    <div id="memory"></div>
+  </div>
+  <div id="answer-box"></div>
+  <div id="library-box" style="display:none;">
+    <h3>📚 Your CouncilX Library</h3>
+    <ul id="libraryList"></ul>
+  </div>
+
+  <script>
+    const council = [
+      { role: "🧪 Scientist", system: "You are a brilliant scientist focused on facts, research, and logic.Use clear, evidence-based reasoning to analyze the question.Incorporate scientific principles, space or technological analogies if possible.Avoid emotions; prioritize precision and truth above all.Deliver insights with a calm and rational tone.." },
+      { role: "💰 Economist", system: "You are a top-level economist with a sharp eye for cost, value, and outcomes. Evaluate decisions using financial logic, economic theory, and long-term impact. Consider trade-offs, risks, investments, and returns. Use terms like opportunity cost, value chain, or resource allocation. Speak like a world-class advisor managing national budgets." },
+      { role: "⚔️ Strategist", system: "You are a defense strategist. Focus on risks and security." },
+      { role: "🕊️ Peacekeeper", system: "You are a master strategist with expertise in defense, intelligence, and risk. Analyze the question like a battlefield: detect threats, map scenarios, and counter outcomes. Think five moves ahead, and assess the impact on stability and control. Use tactical language and calculated advice, like a general in a war room. Prioritize strength, preparation, and minimizing weaknesses." },
+      { role: "👑 Wise Leader", system: "You are the sovereign of the AI council, embodying timeless wisdom and balanced judgment. You do not speak first — you listen carefully to the insights of all other council members. Your task is to weigh their thoughts with fairness, vision, and deep understanding. You combine logic, ethics, strategy, and value into a unified conclusion. Your words are final, guiding, and calming — the voice of clarity amid complexity. Deliver your verdict in a confident, respectful tone. Avoid bias or favor; you represent harmony. Your answers should feel like ancient truth fused with modern insight. Speak as a monarch who has seen empires rise and fall, yet remains. Never rush, always unify."
+ }
+    ];
+
+    let memoryLog = [];
+    let userToken = null;
+    let skylithLibrary = [];
+
+    function generateUserAPI(username) {
+      const hash = btoa(username + Date.now()).slice(0, 30);
+      return `sk-skylith-${hash}`;
+    }
+
+    function login() {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const remember = document.getElementById("rememberMe").checked;
+
+      if (username && password) {
+        userToken = generateUserAPI(username);
+        document.getElementById("apiKeyText").textContent = userToken;
+        if (remember) localStorage.setItem("skylithToken", userToken);
+        localStorage.setItem("skylithLibrary", JSON.stringify([]));
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("question-box").style.display = "block";
+        document.getElementById("api-access").style.display = "block";
+        document.getElementById("library-box").style.display = "block";
+      } else {
+        alert("Please fill in both username and password.");
+      }
+    }
+
+    function guestMode() {
+      userToken = "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";
+      document.getElementById("login-box").style.display = "none";
+      document.getElementById("question-box").style.display = "block";
+      document.getElementById("api-access").style.display = "none";
+      document.getElementById("library-box").style.display = "none";
+    }
+
+    if (localStorage.getItem("skylithToken")) {
+      userToken = localStorage.getItem("skylithToken");
+      document.getElementById("apiKeyText").textContent = userToken;
+      document.getElementById("login-box").style.display = "none";
+      document.getElementById("question-box").style.display = "block";
+      document.getElementById("api-access").style.display = "block";
+      document.getElementById("library-box").style.display = "block";
+    }
+
+    async function getCouncilAnswers() {
+      const question = document.getElementById("userQuestion").value.trim();
+      const output = document.getElementById("answer-box");
+      output.innerHTML = '';
+      if (!question) {
+        output.innerHTML = '<p>Please enter a question.</p>';
+        return;
+      }
+
+      memoryLog.push("🧠 You: " + question);
+      updateMemory();
+
+      const councilPromises = council.map(member =>
+        askCouncilAPI(question, member.system).then(response => ({ role: member.role, response }))
+      );
+
+      const responses = await Promise.all(councilPromises);
+      let summaryInput = '';
+
+      responses.forEach(({ role, response }) => {
+        const div = document.createElement("div");
+        div.className = "council-response";
+        div.innerHTML = `<div class="role">${role}</div><div>${response}</div> <button onclick="speak(\`${role} says: ${response}\`)">🔊 Speak</button>`;
+        output.appendChild(div);
+        summaryInput += `${role}: ${response}\n`;
+      });
+
+      const summary = await askCouncilAPI(summaryInput, "Summarize the above council decisions in one clear paragraph.");
+      const final = document.createElement("div");
+      final.className = "council-response";
+      final.style.borderLeftColor = "gold";
+      final.innerHTML = `<div class="role">🗳️ Final Verdict</div><div>${summary}</div>`;
+      output.appendChild(final);
+
+      memoryLog.push("📜 Verdict: " + summary);
+      updateMemory();
+      updateLibrary(question, summary);
+    }
+
+    async function askCouncilAPI(question, systemPrompt) {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${userToken}`
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-3-70b-instruct",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question }
+          ]
+        })
+      });
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || "No response received.";
+    }
+
+    function updateMemory() {
+      const memBox = document.getElementById("memory");
+      memBox.innerHTML = '<strong>🧠 Memory:</strong><br>' + memoryLog.slice(-5).join("<br>");
+    }
+
+    function updateLibrary(question, summary) {
+      if (!userToken.startsWith("sk-skylith-")) return;
+      skylithLibrary.push({ q: question, a: summary });
+      localStorage.setItem("skylithLibrary", JSON.stringify(skylithLibrary));
+      renderLibrary();
+    }
+
+    function renderLibrary() {
+      if (!userToken.startsWith("sk-skylith-")) return;
+      const saved = JSON.parse(localStorage.getItem("skylithLibrary") || '[]');
+      skylithLibrary = saved;
+      const list = document.getElementById("libraryList");
+      list.innerHTML = '';
+      for (let item of saved.slice(-10)) {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>Q:</strong> ${item.q}<br><strong>A:</strong> ${item.a}`;
+        list.appendChild(li);
+      }
+    }
+
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      }
+    }
+
+    renderLibrary();
+  </script>
+</body>
+</html>
